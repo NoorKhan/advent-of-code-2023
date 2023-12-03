@@ -16,7 +16,6 @@
 	 (loop for subset in subsets
 	    while valid
 	    do (setf valid (is-valid-subset subset bag)))
-
 	 (if valid (setf valid-game-ids (append (list game-id) valid-game-ids))))))
     valid-game-ids))
 
@@ -48,7 +47,6 @@
 	     do (let ((cubes (uiop:split-string subset :separator ",")))
 		  (loop for cube in cubes
 		     do (update-min-bag subset min-bag))))
-
 	  (setf game-powers (append (list (reduce #'* (loop for value being the hash-values of min-bag
 							 collect value))) game-powers)))))
     game-powers))
