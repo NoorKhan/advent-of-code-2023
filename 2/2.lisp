@@ -42,3 +42,36 @@
 ;; part 1
 (reduce #'+ (get-valid-game-ids "input.txt" *bag*))
 
+(defun get-game-powers (input-file)
+  (let ((game-powers '()))
+
+    (with-open-file (stream input-file)
+      (do ((line (read-line stream nil)
+		 (read-line stream nil)))
+	  ((null line))
+	
+	(let* ((colon-index (search ":" line))
+	       (subsets (uiop:split-string (subseq line (+ 1 colon-index)) :separator ";"))
+	       (min-bag (make-hash-table :test 'equal)))
+
+	  (loop for subset in subsets
+	     do (let ((cubes (uiop:split-string subset :separator ",")))
+
+		  (loop for cube in cubes
+		     do (let* ((cube-info (uiop:split-string (string-trim '(#\Space #\Tab #\Newline #\Return) cube)))
+			       (cube-count (parse-integer (car cube-info)))
+			       (cube-color (cadr cube-info))
+			       (count-in-bag (gethash cube-color min-bag)))
+
+			  (if (or (null count-in-bag) (< count-in-bag cube-count)) (setf (gethash cube-color min-bag) cube-count))))))
+
+	  (setf game-powers (append (list (reduce #'* (loop for value being the hash-values of min-bag
+							 collect value))) game-powers)))))
+
+    game-powers))
+
+
+;; part 2
+(reduce #'+ (get-game-powers "input.txt"))
+
+
