@@ -58,20 +58,27 @@
 	     do (let ((cubes (uiop:split-string subset :separator ",")))
 
 		  (loop for cube in cubes
-		     do (let* ((cube-info (uiop:split-string (string-trim '(#\Space #\Tab #\Newline #\Return) cube)))
-			       (cube-count (parse-integer (car cube-info)))
-			       (cube-color (cadr cube-info))
-			       (count-in-bag (gethash cube-color min-bag)))
-
-			  (if (or (null count-in-bag) (< count-in-bag cube-count)) (setf (gethash cube-color min-bag) cube-count))))))
+		     do (update-min-bag subset min-bag))))
 
 	  (setf game-powers (append (list (reduce #'* (loop for value being the hash-values of min-bag
 							 collect value))) game-powers)))))
 
     game-powers))
 
+(defun update-min-bag (subset min-bag)
+  (let ((cubes (uiop:split-string subset :separator ",")))
+
+    (loop for cube in cubes
+       do (let* ((cube-info (uiop:split-string (string-trim '(#\Space #\Tab #\Newline #\Return) cube)))
+		 (cube-count (parse-integer (car cube-info)))
+		 (cube-color (cadr cube-info))
+		 (count-in-bag (gethash cube-color min-bag)))
+
+	    (if (or (null count-in-bag) (< count-in-bag cube-count)) (setf (gethash cube-color min-bag) cube-count))))
+
+    min-bag))
+
 
 ;; part 2
 (reduce #'+ (get-game-powers "input.txt"))
-
 
