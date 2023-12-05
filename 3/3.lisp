@@ -12,7 +12,7 @@
 	 (incf line-count))))
     (setf engine-schematic (make-array `(,line-length ,line-count)))
     (let ((current-line 0))
-      (with-open-file (stream input-file)
+*backtrace-frame-count*      (with-open-file (stream input-file)
        (do ((line (read-line stream nil)
 		  (read-line stream nil)))
 	   ((null line))
@@ -24,24 +24,26 @@
 
 (defun get-valid-numbers (engine-schematic)
   (let ((valid-numbers '()))
-    (destructuring-bind (n m) (array-dimensions engine-schematic)
-      (let ((test-number "")
-	    (test-indices '()))
-	(loop for i from 0 below n do
-	     (loop for j from 0 below m
-		for current-char = (aref engine-schematic i j)
-		for is-digit = (digit-char-p current-char) do
-		  (cond (is-digit
-			 (setf test-number (concatenate 'string test-number (string current-char))
-			       test-indices (append test-indices (list j))))
-			(t (when (and (> (length test-number) 0) (valid-number-p test-indices i (- n 1) (- m 1) engine-schematic test-number))
-			     (setf valid-numbers (append valid-numbers (list (parse-integer test-number)))))
-			   (setf test-number ""
-				 test-indices '())))))))
+    (destructuring-bind (row-count column-count) (array-dimensions engine-schematic)
+      (loop for i from 0 below row-count
+	 for test-number = ""
+	 for test-indices = '()
+	 do (loop for j from 0 below column-count
+	       for current-char = (aref engine-schematic i j)
+	       for is-digit = (digit-char-p current-char) do
+		 (cond (is-digit
+			(setf test-number (concatenate 'string test-number (string current-char))
+			      test-indices (append test-indices (list j)))
+			(when (and (= j (- column-count 1)) test-indices (valid-number-p test-indices i row-count column-count engine-schematic test-number))
+			  (setf valid-numbers (append valid-numbers (list (parse-integer test-number))))))
+		       (t (when (and (> (length test-number) 0) (valid-number-p test-indices i row-count column-count engine-schematic test-number))
+			    (setf valid-numbers (append valid-numbers (list (parse-integer test-number)))))
+			  (setf test-number ""
+				test-indices '()))))))
     valid-numbers))
 
 (defun valid-number-p (test-indices row row-count column-count engine-schematic test-number)
-  (format t "test number: ~a test indices: ~a row: ~a~%" test-number test-indices row)
+  (format t "test number: ~a test indices: ~a row: ~a row-count: ~a column-count: ~a~%" test-number test-indices row row-count column-count)
   (loop for index in test-indices thereis (adjacent-symbol-p index row row-count column-count engine-schematic)))
 
 (defun adjacent-symbol-p (index row row-count column-count engine-schematic)
@@ -49,24 +51,78 @@
    ;;; left
    (and (> index 0) (not-digit-or-period-p (aref engine-schematic row (- index 1))))
    ;;; below
-   (and (< row row-count) (not-digit-or-period-p (aref engine-schematic (+ row 1) index)))
+   (and (< row (- row-count 1)) (not-digit-or-period-p (aref engine-schematic (+ row 1) index)))
    ;;; below to the left
-   (and (> index 0) (< row row-count) (not-digit-or-period-p (aref engine-schematic (+ row 1) (- index 1))))
+   (and (> index 0) (< row (- row-count 1)) (not-digit-or-period-p (aref engine-schematic (+ row 1) (- index 1))))
    ;;; right
-   (and (< index column-count) (not-digit-or-period-p (aref engine-schematic row (+ index 1))))
+   (and (< index (- column-count 1)) (not-digit-or-period-p (aref engine-schematic row (+ index 1))))
    ;;; above
    (and (> row 0) (not-digit-or-period-p (aref engine-schematic (- row 1) index)))
    ;;; above to the right
-   (and (< index column-count) (> row 0) (not-digit-or-period-p (aref engine-schematic (- row 1) (+ index 1))))
+   (and (< index (- column-count 1)) (> row 0) (not-digit-or-period-p (aref engine-schematic (- row 1) (+ index 1))))
    ;;; below to the right
-   (and (< index column-count) (< row row-count) (not-digit-or-period-p (aref engine-schematic (+ row 1) (+ index 1))))
+   (and (< index (- column-count 1)) (< row (- row-count 1)) (not-digit-or-period-p (aref engine-schematic (+ row 1) (+ index 1))))
    ;;; above to the left
    (and (> index 0) (> row 0) (not-digit-or-period-p (aref engine-schematic (- row 1) (- index 1))))))
 
 (defun not-digit-or-period-p (c)
   (not (or (digit-char-p c) (char= c #\.))))
 
-;;; part 1
 (defparameter *engine-schematic* (initialize-engine-schematic "input.txt"))
+
+;;; part 1
 (reduce #'+ (get-valid-numbers *engine-schematic*))
+
+(defun get-valid-gear-numbers (engine-schematic)
+  (let (valid-gear-numbers '())
+    (destructuring-bind (row-count column-count) (array-dimensions engine-schematic)
+      (loop for i from 0 below row-count do
+	   (loop for j from 0 below column-count
+	       for current-char = (aref engine-schematic i j)
+	       for is-gear-char = (gear-char-p current-char) do
+		(when is-gear-char
+		  (let ((surrounding-numbers
+			 (get-surrounding-numbers j i row-count column-count engine-schematic)))
+		    (when (= (length surrounding-numbers) 2)
+		      (setf valid-gear-numbers
+			    (append valid-gear-numbers (list surrounding-numbers)))))))))
+    valid-gear-numbers))
+
+(defun gear-char-p (char)
+  (char= char #\*))
+
+(defun get-surrounding-numbers (index row row-count column-count engine-schematic)
+  (let ((surrounding-numbers '()))
+    ;;; above
+    (when (and (> row 0) (digit-char-p (aref engine-schematic (- row 1) index)))
+      (setf surrounding-numbers (append surrounding-numbers (list (get-number index (- row 1)  row-count column-count engine-schematic)))))
+    surrounding-numbers)) 
+
+(defun get-number (index row row-count column-count engine-schematic)
+  (let ((number (string (aref engine-schematic row index))))
+    (print number)
+    (loop for current-index = (- index 1)
+       while (and
+	      (>= current-index 0)
+	      (digit-char-p (aref engine-schematic row current-index)))
+       do (print current-index)
+	 (setf number
+		(concatenate 'string
+			     (string (aref engine-schematic row current-index))
+			     number)
+		current-index
+		(- current-index 1)))
+    (loop for current-index = (+ index 1)
+       while (and
+	      (< current-index column-count)
+	      (digit-char-p (aref engine-schematic row current-index)))
+       do (setf number
+		(concatenate 'string
+			     (string (aref engine-schematic row current-index))
+			     number)
+		current-index
+		(+ current-line 1)))
+    number))
+
+(get-number 5 0 10 140 *engine-schematic*)
 
