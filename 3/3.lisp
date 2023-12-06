@@ -95,25 +95,111 @@
   (let ((surrounding-numbers '()))
     ;;; above
     (when (and (> row 0) (digit-char-p (aref engine-schematic (- row 1) index)))
-      (setf surrounding-numbers (append surrounding-numbers (list (get-number index (- row 1)  row-count column-count engine-schematic)))))
+      (setf surrounding-numbers
+	    (append surrounding-numbers
+		    (list (get-number
+			   (- row 1)
+			   index
+			   row-count
+			   column-count
+			   engine-schematic)))))
+    ;;; above to the right
+    (when (and (> row 0)
+	       (< index (- column-count 1))
+	       (digit-char-p (aref engine-schematic (- row 1) (+ index 1))))
+      (setf surrounding-numbers
+	    (append surrounding-numbers
+		    (list (get-number
+			   (- row 1)
+			   (+ index 1)
+			   row-count
+			   column-count
+			   engine-schematic)))))
+    ;;; to the right
+    (when (and (< index (- column-count 1))
+	       (digit-char-p (aref engine-schematic row (+ index 1))))
+      (setf surrounding-numbers
+	    (append surrounding-numbers
+		    (list (get-number
+			   row
+			   (+ index 1)
+			   row-count
+			   column-count
+			   engine-schematic)))))
+    ;;; below to the right
+    (when (and (< row (- row-count 1))
+	       (< index (- column-count 1))
+	       (digit-char-p (aref engine-schematic (+ row 1) (+ index 1))))
+      (setf surrounding-numbers
+	    (append surrounding-numbers
+		    (list (get-number
+			   (+ row 1)
+			   (+ index 1)
+			   row-count
+			   column-count
+			   engine-schematic)))))
+    ;;; below
+    (when (and (< row (- row-count 1))
+	       (digit-char-p (aref engine-schematic (+ row 1) index)))
+      (setf surrounding-numbers
+	    (append surrounding-numbers
+		    (list (get-number
+			   (+ row 1)
+			   index
+			   row-count
+			   column-count
+			   engine-schematic)))))
+    ;;; below to the left
+    (when (and (< row (- row-count 1))
+	       (> index 0)
+	       (digit-char-p (aref engine-schematic (+ row 1) (- index 1))))
+      (setf surrounding-numbers
+	    (append surrounding-numbers
+		    (list (get-number
+			   (+ row 1)
+			   (- index 1)
+			   row-count
+			   column-count
+			   engine-schematic)))))
+    ;;; to the left
+    (when (and (> index 0)
+	       (digit-char-p (aref engine-schematic row (- index 1))))
+      (setf surrounding-numbers
+	    (append surrounding-numbers
+		    (list (get-number
+			   row
+			   (- index 1)
+			   row-count
+			   column-count
+			   engine-schematic)))))
+    ;;; above to the left
+    (when (and (> row 0)
+	       (> index 0)
+	       (digit-char-p (aref engine-schematic (- row 1) (- index 1))))
+      (setf surrounding-numbers
+	    (append surrounding-numbers
+		    (list (get-number
+			   (- row 1)
+			   (- index 1)
+			   row-count
+			   column-count
+			   engine-schematic)))))
     surrounding-numbers)) 
 
-(defun get-number (index row row-count column-count engine-schematic)
-  (let ((number (string (aref engine-schematic row index))))
-    (print number)
-    (loop for current-index = (- index 1)
-       while (and
-	      (>= current-index 0)
-	      (digit-char-p (aref engine-schematic row current-index)))
-       do (print current-index)
-	 (setf number
-		(concatenate 'string
-			     (string (aref engine-schematic row current-index))
-			     number)
-		current-index
-		(- current-index 1)))
-    (loop for current-index = (+ index 1)
-       while (and
+(defun get-number (row index row-count column-count engine-schematic)
+  (let ((number (string (aref engine-schematic row index)))
+	(current-index (- index 1)))
+    (loop while (and
+		 (>= current-index 0)
+		 (digit-char-p (aref engine-schematic row current-index)))
+       do (setf number
+	       (concatenate 'string
+			    (string (aref engine-schematic row current-index))
+			    number)
+	       current-index
+	       (- current-index 1)))
+    (setf current-index (+ index 1))
+    (loop while (and
 	      (< current-index column-count)
 	      (digit-char-p (aref engine-schematic row current-index)))
        do (setf number
