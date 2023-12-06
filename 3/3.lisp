@@ -1,3 +1,5 @@
+(ql:quickload "fset")
+
 (defun initialize-engine-schematic (input-file)
   (let ((line-length nil)
 	(line-count 0)
@@ -188,7 +190,9 @@
 
 (defun get-number (row index row-count column-count engine-schematic)
   (let ((number (string (aref engine-schematic row index)))
-	(current-index (- index 1)))
+	(current-index (- index 1))
+	(response (list :row row)))
+    (print number)
     (loop while (and
 		 (>= current-index 0)
 		 (digit-char-p (aref engine-schematic row current-index)))
@@ -198,7 +202,8 @@
 			    number)
 	       current-index
 	       (- current-index 1)))
-    (setf current-index (+ index 1))
+    (setf (getf response :begin-index) (+ current-index 1)
+	  current-index (+ index 1))
     (loop while (and
 	      (< current-index column-count)
 	      (digit-char-p (aref engine-schematic row current-index)))
@@ -208,7 +213,18 @@
 			     number)
 		current-index
 		(+ current-line 1)))
-    number))
+    (setf (getf response :end-index) current-index
+	  (getf response :number) (parse-integer number))
+    response))
 
-(get-number 5 0 10 140 *engine-schematic*)
+(get-number 0 5 10 140 *engine-schematic*)
+
+(in-package fset-user)
+
+(defparameter *test-set* (fset:empty-set))
+
+(with *test-set* 3)
+*test-set*
+
+(getf '(:a 10 :b 7) :c)
 
