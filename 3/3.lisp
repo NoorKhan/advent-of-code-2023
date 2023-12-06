@@ -1,4 +1,5 @@
 (ql:quickload "fset")
+(use-package :fset)
 
 (defun initialize-engine-schematic (input-file)
   (let ((line-length nil)
@@ -75,17 +76,24 @@
 ;;; part 1
 (reduce #'+ (get-valid-numbers *engine-schematic*))
 
+;; part 2
+(reduce #'+ (map 'list #'get-gear-ratio (get-valid-gear-numbers *engine-schematic*)))
+
+(defun get-gear-ratio (gears)
+  (fset:reduce (lambda (x y) (* (getf x :number) (getf y :number))) gears))
+
 (defun get-valid-gear-numbers (engine-schematic)
-  (let (valid-gear-numbers '())
+  (let ((valid-gear-numbers '()))
     (destructuring-bind (row-count column-count) (array-dimensions engine-schematic)
       (loop for i from 0 below row-count do
-	   (loop for j from 0 below column-count
-	       for current-char = (aref engine-schematic i j)
-	       for is-gear-char = (gear-char-p current-char) do
+	(loop for j from 0 below column-count
+	      for current-char = (aref engine-schematic i j)
+	      for is-gear-char = (gear-char-p current-char) do
 		(when is-gear-char
 		  (let ((surrounding-numbers
-			 (get-surrounding-numbers j i row-count column-count engine-schematic)))
-		    (when (= (length surrounding-numbers) 2)
+			  (get-surrounding-numbers i j row-count column-count engine-schematic)))
+		    (format t "surrounding numbers: ~a~%" surrounding-numbers)
+		    (when (= (fset:size surrounding-numbers) 2)
 		      (setf valid-gear-numbers
 			    (append valid-gear-numbers (list surrounding-numbers)))))))))
     valid-gear-numbers))
@@ -93,115 +101,115 @@
 (defun gear-char-p (char)
   (char= char #\*))
 
-(defun get-surrounding-numbers (index row row-count column-count engine-schematic)
-  (let ((surrounding-numbers '()))
-    ;;; above
+(defun get-surrounding-numbers (row index row-count column-count engine-schematic)
+  (let ((surrounding-numbers (fset:empty-set)))
+;;; above
     (when (and (> row 0) (digit-char-p (aref engine-schematic (- row 1) index)))
       (setf surrounding-numbers
-	    (append surrounding-numbers
-		    (list (get-number
-			   (- row 1)
-			   index
-			   row-count
-			   column-count
-			   engine-schematic)))))
-    ;;; above to the right
+	    (fset:with surrounding-numbers
+		       (get-number
+			(- row 1)
+			index
+			row-count
+			column-count
+			engine-schematic))))
+;;; above to the right
     (when (and (> row 0)
 	       (< index (- column-count 1))
 	       (digit-char-p (aref engine-schematic (- row 1) (+ index 1))))
       (setf surrounding-numbers
-	    (append surrounding-numbers
-		    (list (get-number
-			   (- row 1)
-			   (+ index 1)
-			   row-count
-			   column-count
-			   engine-schematic)))))
-    ;;; to the right
+	    (fset:with surrounding-numbers
+		       (get-number
+			(- row 1)
+			(+ index 1)
+			row-count
+			column-count
+			engine-schematic))))
+;;; to the right
     (when (and (< index (- column-count 1))
 	       (digit-char-p (aref engine-schematic row (+ index 1))))
       (setf surrounding-numbers
-	    (append surrounding-numbers
-		    (list (get-number
-			   row
-			   (+ index 1)
-			   row-count
-			   column-count
-			   engine-schematic)))))
-    ;;; below to the right
+	    (fset:with surrounding-numbers
+		       (get-number
+			row
+			(+ index 1)
+			row-count
+			column-count
+			engine-schematic))))
+;;; below to the right
     (when (and (< row (- row-count 1))
 	       (< index (- column-count 1))
 	       (digit-char-p (aref engine-schematic (+ row 1) (+ index 1))))
       (setf surrounding-numbers
-	    (append surrounding-numbers
-		    (list (get-number
-			   (+ row 1)
-			   (+ index 1)
-			   row-count
-			   column-count
-			   engine-schematic)))))
-    ;;; below
+	    (fset:with surrounding-numbers
+		       (get-number
+			(+ row 1)
+			(+ index 1)
+			row-count
+			column-count
+			engine-schematic))))
+;;; below
     (when (and (< row (- row-count 1))
 	       (digit-char-p (aref engine-schematic (+ row 1) index)))
       (setf surrounding-numbers
-	    (append surrounding-numbers
-		    (list (get-number
-			   (+ row 1)
-			   index
-			   row-count
-			   column-count
-			   engine-schematic)))))
-    ;;; below to the left
+	    (fset:with surrounding-numbers
+		       (get-number
+			(+ row 1)
+			index
+			row-count
+			column-count
+			engine-schematic))))
+;;; below to the left
     (when (and (< row (- row-count 1))
 	       (> index 0)
 	       (digit-char-p (aref engine-schematic (+ row 1) (- index 1))))
       (setf surrounding-numbers
-	    (append surrounding-numbers
-		    (list (get-number
-			   (+ row 1)
-			   (- index 1)
-			   row-count
-			   column-count
-			   engine-schematic)))))
-    ;;; to the left
+	    (fset:with surrounding-numbers
+		       (get-number
+			(+ row 1)
+			(- index 1)
+			row-count
+			column-count
+			engine-schematic))))
+;;; to the left
     (when (and (> index 0)
 	       (digit-char-p (aref engine-schematic row (- index 1))))
       (setf surrounding-numbers
-	    (append surrounding-numbers
-		    (list (get-number
-			   row
-			   (- index 1)
-			   row-count
-			   column-count
-			   engine-schematic)))))
-    ;;; above to the left
+	    (fset:with surrounding-numbers
+		       (get-number
+			row
+			(- index 1)
+			row-count
+			column-count
+			engine-schematic))))
+;;; above to the left
     (when (and (> row 0)
 	       (> index 0)
 	       (digit-char-p (aref engine-schematic (- row 1) (- index 1))))
       (setf surrounding-numbers
-	    (append surrounding-numbers
-		    (list (get-number
-			   (- row 1)
-			   (- index 1)
-			   row-count
-			   column-count
-			   engine-schematic)))))
+	    (fset:with surrounding-numbers
+		       (get-number
+			(- row 1)
+			(- index 1)
+			row-count
+			column-count
+			engine-schematic))))
     surrounding-numbers)) 
 
 (defun get-number (row index row-count column-count engine-schematic)
   (let ((number (string (aref engine-schematic row index)))
 	(current-index (- index 1))
 	(response (list :row row)))
-    (print number)
+    (format t "[~a, ~a]: ~a~%" row index number)
     (loop while (and
 		 (>= current-index 0)
 		 (digit-char-p (aref engine-schematic row current-index)))
-       do (setf number
-	       (concatenate 'string
-			    (string (aref engine-schematic row current-index))
-			    number)
-	       current-index
-	       (- current-index 1)))
+	  do (setf number
+		   (concatenate 'string
+				(string (aref engine-schematic row current-index))
+				number)
+		   current-index
+		   (- current-index 1)))
     (setf (getf response :begin-index) (+ current-index 1)
 	  current-index (+ index 1))
     (loop while (and
@@ -209,22 +217,13 @@
 	      (digit-char-p (aref engine-schematic row current-index)))
        do (setf number
 		(concatenate 'string
-			     (string (aref engine-schematic row current-index))
-			     number)
+			     number
+			     (string (aref engine-schematic row current-index)))
 		current-index
-		(+ current-line 1)))
+		(+ current-index 1)))
     (setf (getf response :end-index) current-index
 	  (getf response :number) (parse-integer number))
+    (print response)
     response))
 
-(get-number 0 5 10 140 *engine-schematic*)
-
-(in-package fset-user)
-
-(defparameter *test-set* (fset:empty-set))
-
-(with *test-set* 3)
-*test-set*
-
-(getf '(:a 10 :b 7) :c)
 
