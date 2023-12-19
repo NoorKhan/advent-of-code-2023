@@ -43,20 +43,32 @@
 	       (matches (fset:size (fset:intersection winning-numbers your-numbers))))
 	  (setf (gethash card-id card-map) (cons winning-numbers your-numbers))
 	  (setf cards-to-check (append cards-to-check (list card-id))))))
-    (print cards-to-check)
     (loop while (> (length cards-to-check) 0) do
+      (print cards-to-check)
       (let* ((card-id (car cards-to-check))
 	     (numbers (gethash card-id card-map))
 	     (matches (fset:size (fset:intersection (car numbers) (cdr numbers)))))
 	(incf total-cards)
 	(when (> matches 0)
-	  (loop for i from 1 to matches do
-	    (setf cards-to-check (append cards-to-check (list (+ card-id i))))))
+	  (loop for i from 1 to matches
+		for next-card-id = (+ card-id i) do
+	    (when (gethash next-card-id card-map)
+	      (setf cards-to-check (insert-after
+				    cards-to-check
+				    (position next-card-id cards-to-check)
+				    next-card-id)))))
 	(setf cards-to-check (cdr cards-to-check))))
     total-cards))
 
 (print (get-total-cards "test input.txt"))
 (print (get-total-cards "input.txt"))
+
+(nthcdr 1 '(1 2 3))
+(position 7 '(52 2 2 2 9 1 2))
+
+(defun insert-after (lst index newelt)
+  (push newelt (cdr (nthcdr index lst))) 
+  lst)
 
 (defun parse-numbers (numbers)
   (to-set (map 'list
