@@ -27,7 +27,8 @@
 (defun get-total-cards (input-file)
   (let ((total-cards 0)
 	(cards-to-check '())
-	(card-map (make-hash-table)))
+	(card-map (make-hash-table))
+	(card-id-count-map (make-hash-table)))
     (with-open-file (stream input-file)
       (do ((line (read-line stream nil)
 		 (read-line stream nil)))
@@ -39,32 +40,29 @@
 							   (car split-line)))))))
 	       (numbers (uiop:split-string (cadr split-line) :separator "|"))
 	       (winning-numbers (parse-numbers (car numbers)))
-	       (your-numbers (parse-numbers (cadr numbers)))
-	       (matches (fset:size (fset:intersection winning-numbers your-numbers))))
+	       (your-numbers (parse-numbers (cadr numbers))))
 	  (setf (gethash card-id card-map) (cons winning-numbers your-numbers))
 	  (setf cards-to-check (append cards-to-check (list card-id))))))
-    (loop while (> (length cards-to-check) 0) do
-      (print cards-to-check)
-      (let* ((card-id (car cards-to-check))
-	     (numbers (gethash card-id card-map))
-	     (matches (fset:size (fset:intersection (car numbers) (cdr numbers)))))
-	(incf total-cards)
-	(when (> matches 0)
-	  (loop for i from 1 to matches
-		for next-card-id = (+ card-id i) do
-	    (when (gethash next-card-id card-map)
-	      (setf cards-to-check (insert-after
-				    cards-to-check
-				    (position next-card-id cards-to-check)
-				    next-card-id)))))
-	(setf cards-to-check (cdr cards-to-check))))
+    (loop for card-id in cards-to-check do
+	 (let* ((numbers (gethash card-id card-map))
+		(matches (fset:size (fset:intersection (car numbers) (cdr numbers)))))
+	   (add-card-copy card-id card-id-count-map)
+	   (let ((card-id-count (gethash card-id card-id-count-map)))
+	     (loop for i from 1 to card-id-count do
+		  (loop for j from 1 to matches
+		     for next-card-id = (+ card-id j) do
+		       (when (gethash next-card-id card-map)
+			 (add-card-copy next-card-id card-id-count-map)))))))
+    (loop for v being the hash-value of card-id-count-map do (setf total-cards (+ total-cards v)))
     total-cards))
 
-(print (get-total-cards "test input.txt"))
-(print (get-total-cards "input.txt"))
+(defun add-card-copy (card-id card-id-count-map)
+  (if (gethash card-id card-id-count-map)
+      (setf (gethash card-id card-id-count-map) (+ 1 (gethash card-id card-id-count-map)))
+      (setf (gethash card-id card-id-count-map) 1)))
 
-(nthcdr 1 '(1 2 3))
-(position 7 '(52 2 2 2 9 1 2))
+(get-total-cards "test input.txt")
+(get-total-cards "input.txt")
 
 (defun insert-after (lst index newelt)
   (push newelt (cdr (nthcdr index lst))) 
