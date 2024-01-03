@@ -1,4 +1,4 @@
-(+ 1 2)
+(ql:quickload :arrow-macros)
 
 (defparameter *seeds-key* "seeds")
 (defparameter *seed-to-soil-key* "seed-to-soil")
@@ -20,18 +20,22 @@
 				 (car (uiop:split-string
 				       trimmed-line
 				       :separator ":"))
-				 :separator " "))))))))
+				 :separator " ")))
+	  (let ((key (car (uiop:split-string
+				 (car (uiop:split-string
+				       trimmed-line
+				       :separator ":"))
+				 :separator " "))))
+	    (cond ((equal key *seeds-key*) (let* ((seed-numbers (uiop:split-string
+								 (trim-string-whitespace
+								  (cadr (uiop:split-string
+									 trimmed-line
+									 :separator ":")))
+								 :separator " ")))
+					     (format t "~a~%" seed-numbers))))))))))
+
+(defun trim-string-whitespace (string)
+  (string-trim '(#\Space #\Tab #\Newline #\Return) string))
 
 (parse-input "test input.txt")
-
-(uiop:split-string "abc" :separator " ")
-
-(defun test (x)
-  (let ((x 5))
-    (print x))
-  (print x))
-
-(test 7)
-
-
 
