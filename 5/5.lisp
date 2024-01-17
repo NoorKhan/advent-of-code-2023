@@ -53,6 +53,16 @@
 
 (gethash *seed-to-soil-key* (parse-input "test input.txt"))
 
+(defun source-value-in-range? (source source-range-start range-length)
+  (and (<= source-range-start source) (>= (+ source-range-start (- range-length 1)) source)))
+
+(source-value-in-range? 97 98 2)
+
+(find-if #'(lambda (numbers) (let ((source-range-start (nth 1 numbers))
+				   (range-length (nth 2 numbers)))
+			       (source-value-in-range? 1 source-range-start range-length)))
+	 '((50 98 2) (52 50 48)))
+
 (nth 2 (car (append '((1 2 3)) (list '(1 2 3)))))
 
 (defun get-min-location (parsed-input-map)
