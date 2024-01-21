@@ -51,8 +51,6 @@
 		   (setf (gethash current-key parsed-input-map) (append source-to-destination-list (list numbers)))))))))
     parsed-input-map))
 
-(gethash *seed-to-soil-key* (parse-input "test input.txt"))
-
 (defun source-value-in-range? (source source-range-start range-length)
   (and (<= source-range-start source) (>= (+ source-range-start (- range-length 1)) source)))
 
@@ -71,18 +69,23 @@
 (defun get-min-location (parsed-input-map &optional (seeds (gethash *seeds-key* parsed-input-map)))
   (let ((min-location nil))
     (loop for seed in seeds
-       do (let* ((soil (get-source-destination (gethash *seed-to-soil-key* parsed-input-map) seed))
-		 (fertilizer (get-source-destination (gethash *soil-to-fertilizer-key* parsed-input-map) soil))
-		 (water (get-source-destination (gethash *fertilizer-to-water-key* parsed-input-map) fertilizer))
-		 (light (get-source-destination (gethash *water-to-light-key* parsed-input-map) water))
-		 (temperature (get-source-destination (gethash *light-to-temperature-key* parsed-input-map) light))
-		 (humidity (get-source-destination (gethash *temperature-to-humidity-key* parsed-input-map) temperature))
-		 (location (get-source-destination (gethash *humidity-to-location-key* parsed-input-map) humidity)))
+       do (let ((location (get-location seed parsed-input-map)))
 	    (when (or (null min-location) (> min-location location))
 	      (setf min-location location))))
     min-location))
 
+(defun get-location (seed parsed-input-map)
+  (let* ((soil (get-source-destination (gethash *seed-to-soil-key* parsed-input-map) seed))
+	 (fertilizer (get-source-destination (gethash *soil-to-fertilizer-key* parsed-input-map) soil))
+	 (water (get-source-destination (gethash *fertilizer-to-water-key* parsed-input-map) fertilizer))
+	 (light (get-source-destination (gethash *water-to-light-key* parsed-input-map) water))
+	 (temperature (get-source-destination (gethash *light-to-temperature-key* parsed-input-map) light))
+	 (humidity (get-source-destination (gethash *temperature-to-humidity-key* parsed-input-map) temperature))
+	 (location (get-source-destination (gethash *humidity-to-location-key* parsed-input-map) humidity)))
+    location))
+
 (get-min-location (parse-input "test input.txt"))
+(get-min-location (parse-input "input.txt"))
 
 ;;; part 2
 
@@ -95,33 +98,12 @@
 	      (setf seed-start-range (nth i seeds))
 	      (loop for j from 0 below (nth i seeds)
 		 for seed = (+ seed-start-range j)
-		 do (let* ((soil (get-source-destination (gethash *seed-to-soil-key* parsed-input-map) seed))
-			   (fertilizer (get-source-destination (gethash *soil-to-fertilizer-key* parsed-input-map) soil))
-			   (water (get-source-destination (gethash *fertilizer-to-water-key* parsed-input-map) fertilizer))
-			   (light (get-source-destination (gethash *water-to-light-key* parsed-input-map) water))
-			   (temperature (get-source-destination (gethash *light-to-temperature-key* parsed-input-map) light))
-			   (humidity (get-source-destination (gethash *temperature-to-humidity-key* parsed-input-map) temperature))
-			   (location (get-source-destination (gethash *humidity-to-location-key* parsed-input-map) humidity)))
+		 do (let* ((location (get-location seed parsed-input-map)))
 		      (when (or (null min-location) (> min-location location))
 			(setf min-location location))))))
     min-location))
 
-(get-min-location-part-2 (parse-input "input.txt"))
-
-(defparameter *parsed-input-map* (parse-input "input.txt"))
-
-(defun get-part-2-seeds (seeds)
-  (let ((part-2-seeds '())
-	(seed-range-start nil))
-    (loop for i from 0 below (length seeds)
-       do (if (= (mod i 2) 0)
-	      (setf seed-range-start (nth i seeds))
-	      (loop for j from 0 below (nth i seeds)
-		 do (setf part-2-seeds (append part-2-seeds (list (+ seed-range-start j)))))))
-    part-2-seeds))
-
-(get-min-location *parsed-input-map* (get-part-2-seeds (gethash *seeds-key* *parsed-input-map*)))
-
+(get-min-location-part-2 (parse-input "test input.txt"))
 
 (defun trim-string-whitespace (string)
   (string-trim '(#\Space #\Tab #\Newline #\Return) string))
