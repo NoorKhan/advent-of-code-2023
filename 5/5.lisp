@@ -68,9 +68,8 @@
 	  (+ destination-range-start (- source-value source-range-start)))
 	source-value)))
 
-(defun get-min-location (parsed-input-map)
-  (let ((seeds (gethash *seeds-key* parsed-input-map))
-	(min-location nil))
+(defun get-min-location (parsed-input-map &optional (seeds (gethash *seeds-key* parsed-input-map)))
+  (let ((min-location nil))
     (loop for seed in seeds
        do (let* ((soil (get-source-destination (gethash *seed-to-soil-key* parsed-input-map) seed))
 		 (fertilizer (get-source-destination (gethash *soil-to-fertilizer-key* parsed-input-map) soil))
@@ -83,9 +82,24 @@
 	      (setf min-location location))))
     min-location))
 
-(get-min-location (parse-input "input.txt"))
+(get-min-location (parse-input "test input.txt"))
 
-(+ 1 2)
+;;; part 2
+
+(defparameter *parsed-input-map* (parse-input "input.txt"))
+
+(defun get-part-2-seeds (seeds)
+  (let ((part-2-seeds '())
+	(seed-range-start nil))
+    (loop for i from 0 below (length seeds)
+       do (if (= (mod i 2) 0)
+	      (setf seed-range-start (nth i seeds))
+	      (loop for j from 0 below (nth i seeds)
+		 do (setf part-2-seeds (append part-2-seeds (list (+ seed-range-start j)))))))
+    part-2-seeds))
+
+(get-min-location *parsed-input-map* (get-part-2-seeds (gethash *seeds-key* *parsed-input-map*)))
+
 
 (defun trim-string-whitespace (string)
   (string-trim '(#\Space #\Tab #\Newline #\Return) string))
