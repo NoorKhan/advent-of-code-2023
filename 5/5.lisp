@@ -86,6 +86,28 @@
 
 ;;; part 2
 
+(defun get-min-location-part-2 (parsed-input-map)
+  (let ((seeds (gethash *seeds-key* parsed-input-map))
+	(seed-start-range nil)
+	(min-location nil))
+    (loop for i from 0 below (length seeds)
+       do (if (= (mod i 2) 0)
+	      (setf seed-start-range (nth i seeds))
+	      (loop for j from 0 below (nth i seeds)
+		 for seed = (+ seed-start-range j)
+		 do (let* ((soil (get-source-destination (gethash *seed-to-soil-key* parsed-input-map) seed))
+			   (fertilizer (get-source-destination (gethash *soil-to-fertilizer-key* parsed-input-map) soil))
+			   (water (get-source-destination (gethash *fertilizer-to-water-key* parsed-input-map) fertilizer))
+			   (light (get-source-destination (gethash *water-to-light-key* parsed-input-map) water))
+			   (temperature (get-source-destination (gethash *light-to-temperature-key* parsed-input-map) light))
+			   (humidity (get-source-destination (gethash *temperature-to-humidity-key* parsed-input-map) temperature))
+			   (location (get-source-destination (gethash *humidity-to-location-key* parsed-input-map) humidity)))
+		      (when (or (null min-location) (> min-location location))
+			(setf min-location location))))))
+    min-location))
+
+(get-min-location-part-2 (parse-input "input.txt"))
+
 (defparameter *parsed-input-map* (parse-input "input.txt"))
 
 (defun get-part-2-seeds (seeds)
